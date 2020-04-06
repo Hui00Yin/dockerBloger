@@ -3,14 +3,11 @@ import {createBrowserHistory} from 'history'
 import {connectRouter, routerMiddleware} from 'connected-react-router'
 
 import createFetchMiddleware from 'redux-composable-fetch';
+//import createFetchMiddleware from './redux-composable-fetch-index';
 import ThunkMiddleware from 'redux-thunk';
 import rootReducer from './reducers';
-import DevTools from './DevTools';
 
 const FetchMiddleware = createFetchMiddleware({
-  beforeFetch(){
-    console.log("Hey it's at beforeFetch");
-  },
   afterFetch({ action, result }) {
     return result.json().then(data => {
       return Promise.resolve({
@@ -24,14 +21,16 @@ const FetchMiddleware = createFetchMiddleware({
 export const history = createBrowserHistory()
 
 const finalCreateStore = compose(
-  applyMiddleware(ThunkMiddleware, FetchMiddleware, routerMiddleware(history)),
-  DevTools.instrument()
+  applyMiddleware(ThunkMiddleware, FetchMiddleware, routerMiddleware(history))
 )(createStore);
 
-const reducer = connectRouter(history)(rootReducer)
+const createRootReducer = history => combineReducers({
+  router: connectRouter(history),
+  ...rootReducer,
+})
 
 export default function configureStore(initialState) {
-  const store = finalCreateStore(reducer, initialState);
+  const store = finalCreateStore(createRootReducer(history), initialState);
 
   return store;
 }
